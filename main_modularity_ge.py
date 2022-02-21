@@ -1,6 +1,6 @@
 """
 Script that computes functional connectivity dynamics, performs dim. reduction
-with autoencoder and performs other measures
+with autoencoder and performs modularity and global efficiency measures
 Katerina Capouskova 2020, kcapouskova@hotmail.com
 """
 import argparse
@@ -29,7 +29,7 @@ def parse_args():
     Argument parser.
     """
 
-    parser = argparse.ArgumentParser('Run FC states autoencoder module.')
+    parser = argparse.ArgumentParser('Run encode ae module.')
 
     parser.add_argument('--input', nargs='+', help='Path to the input directory',
                         required=True)
@@ -122,19 +122,23 @@ def main():
         modular = []
         tasks = []
         subjects = []
-        for dfc_path in dfc_paths:
-            task_n = os.path.basename(os.path.dirname(dfc_path))
-            tasks.append(task_n)
+        times = []
+        for dfc_path in tqdm(dfc_paths):
+            task_n = dfc_path.split('/')
+            tasks.append(task_n[7])
             subject_p, fil = os.path.split(dfc_path)
             subject_fil = fil.split('_')
             sub = subject_fil[1]
             subjects.append(sub)
+            time_prep = subject_fil[3].split('.')
+            time = time_prep[0]
+            times.append(time)
             graph = create_graph(dfc_path)
             part = community.best_partition(graph)
             mod = community.modularity(part, graph)
             modular.append(mod)
         dict_graphs = {'task': tasks,
-                       'modularity': modular, 'subject': subjects}
+                       'modularity': modular, 'subject': subjects, 'time': times}
         df_mod = pd.DataFrame.from_dict(data=dict_graphs)
         df_mod.to_csv(os.path.join(output_path, 'graph_analysis_modularity.csv'))
 
@@ -185,20 +189,25 @@ def main():
         glob_eff = []
         tasks_names = []
         subjects_eff = []
-        for matrix_path in dfc_paths:
-            task_n = os.path.basename(os.path.dirname(matrix_path))
-            tasks_names.append(task_n)
+        times_eff = []
+        for matrix_path in tqdm(dfc_paths):
+            task_n = matrix_path.split('/')
+            tasks_names.append(task_n[7])
             subject_p, fil = os.path.split(matrix_path)
             subject_fil = fil.split('_')
             sub = subject_fil[1]
             subjects_eff.append(sub)
+            time_pre = subject_fil[3].split('.')
+            time_e = time_pre[0]
+            times_eff.append(time_e)
             np_array = np.load(matrix_path)['arr_0']
             np_array = np.absolute(np_array)
             np.fill_diagonal(np_array, 0)
             glob_effic = global_efficiency_weighted(np_array)
             glob_eff.append(glob_effic)
         dict_graph = {'task': tasks_names,
-                      'global_efficiency': glob_eff, 'subject': subjects_eff}
+                      'global_efficiency': glob_eff, 'subject': subjects_eff,
+                      'time': times_eff}
         df_ge = pd.DataFrame.from_dict(data=dict_graph)
         df_ge.to_csv(os.path.join(output_path, 'graph_analysis_global_efficiency.csv'))
 

@@ -1,6 +1,6 @@
 """
 Script that postprocesses csv output file of node connectivity algo from
-main_encode_ae.py
+main_modularity_ge.py
 Katerina Capouskova 2021, kcapouskova@hotmail.com
 """
 import argparse

@@ -7,17 +7,21 @@ Katerina Capouskova 2020, kcapouskova@hotmail.com
 """
 import logging
 import os
+import pickle
 
 import numpy as np
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn import preprocessing
+from sklearn.cluster import KMeans, SpectralClustering
+from sklearn.metrics import silhouette_samples, silhouette_score
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.optimizer_v2.adam import Adam
 
 from tensorflow.python.layers.core import Dense
 
-from visualizations import plot_val_los_autoe
+from visualizations import plot_val_los_autoe, plot_clustering_scatter, \
+    plot_silhouette_analysis
 
 
 def autoencoder(dfc_all, output_path, y, imbalanced):
@@ -106,3 +110,32 @@ def autoencoder(dfc_all, output_path, y, imbalanced):
 
     return Zenc
 
+
+def cluster_kmeans(X, output_path):
+    """
+    Performs a K-means clustering algorithm on the data.
+
+    :param X: array with all features for clustering
+    :type X: np.ndarray
+    :param output_path: path to output directory
+    :type output_path: str
+    """
+    # intialize the model
+    kmeans = SpectralClustering(n_clusters=2, affinity='nearest_neighbors',
+                                assign_labels='kmeans')
+    kmeans.fit(X)
+    y_kmeans = kmeans.predict(X)
+    centers = kmeans.cluster_centers_
+    # save the model
+    pickle.dump(kmeans, open(os.path.join(output_path,"kmeans_model.pkl"), "wb"))
+    # plot the datapoints and clusters
+    plot_clustering_scatter(X, y_kmeans, output_path)
+    # Silhouette scores and plots
+    sample_silhouette_values = silhouette_samples(X, y_kmeans)
+    # Save the silhouette values
+    np.save(os.path.join(output_path, 'silhouette.npy'), sample_silhouette_values)
+    silhouette_avg = silhouette_score(X, y_kmeans, sample_size=500)
+    plot_silhouette_analysis(X, output_path, 2, silhouette_avg,
+                             sample_silhouette_values, y_kmeans, centers)
+
+    return y_kmeans, centers
