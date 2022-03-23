@@ -171,9 +171,9 @@ def plot_silhouette_analysis(X, output_path, n_clusters, silhouette_avg,
     ax1.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
 
     # 2nd Plot showing the actual clusters formed
-    colors = plt.get_cmap('Spectral')(np.linspace(0, 1, 10))
+    #colors = plt.get_cmap('Spectral')(np.linspace(0, 1, 10))
     ax2.scatter(X[:, 0], X[:, 1], marker='.', s=30, lw=0, alpha=0.7,
-                c=colors, edgecolor='k')
+                edgecolor='k')
     # Draw white circles at cluster centers
     ax2.scatter(centers[:, 0], centers[:, 1], marker='o',
                 c="white", alpha=1, s=200, edgecolor='k')

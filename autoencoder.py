@@ -15,16 +15,16 @@ from sklearn import preprocessing
 from sklearn.cluster import KMeans, SpectralClustering
 from sklearn.metrics import silhouette_samples, silhouette_score
 from sklearn.model_selection import train_test_split
+from tensorflow.python.keras.layers import Dense
 from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.optimizer_v2.adam import Adam
 
-from tensorflow.python.layers.core import Dense
-
+from utilities import create_dir
 from visualizations import plot_val_los_autoe, plot_clustering_scatter, \
     plot_silhouette_analysis
 
 
-def autoencoder(dfc_all, output_path, y, imbalanced):
+def autoencoder(dfc_all, output_path, y, latent, imbalanced):
     """
     Performs an autoencoder implemented in Keras framework
 
@@ -36,6 +36,8 @@ def autoencoder(dfc_all, output_path, y, imbalanced):
     :type y: []
     :param imbalanced: imbalanced dataset
     :type imbalanced: bool
+    :param latent: latent space dimensionality
+    :type latent: int
     :return: reduced dim. array
     :rtype: np.ndarray
     """
@@ -73,40 +75,44 @@ def autoencoder(dfc_all, output_path, y, imbalanced):
     Zpca = np.dot(x_train - mu, V.transpose())
     Rpca = np.dot(Zpca[:, :2], V[:2, :]) + mu
     err = np.sum((x_train - Rpca) ** 2) / Rpca.shape[0] / Rpca.shape[1]
-    logging.info('PCA reconstruction error with 2 PCs: ' + str(round(err, 3)))
-
+    logging.info('PCA reconstruction error with 2 PCs: ' + str(round(err, 5)))
     # Autoencoder
-    m = Sequential()
-    m.add(Dense(2000, activation='relu', input_shape=((all_ft_1 * all_ft_2),)))
-    m.add(Dense(500, activation='relu'))
-    m.add(Dense(250, activation='relu'))
-    m.add(Dense(125, activation='relu'))
-    m.add(Dense(2, activation='linear', name="bottleneck"))
-    m.add(Dense(125, activation='relu'))
-    m.add(Dense(250, activation='relu'))
-    m.add(Dense(500, activation='relu'))
-    m.add(Dense(2000, activation='relu'))
-    m.add(Dense((all_ft_1 * all_ft_2), activation='sigmoid'))
-    m.compile(loss='mean_squared_error', optimizer=Adam())
-    history = m.fit(x_train, x_train, batch_size=100, epochs=10, verbose=1,
-                    validation_data=(x_test, x_test))
+    latents = [2, 8, 16, 24, 32, 40, 48, 56, 64, 72]
+    output_path_in = output_path
+    for l in latents:
+        output_path = os.path.join(output_path_in, str(l))
+        create_dir(output_path)
+        m = Sequential()
+        m.add(Dense(2000, activation='relu', input_shape=((all_ft_1 * all_ft_2),)))
+        m.add(Dense(500, activation='relu'))
+        m.add(Dense(250, activation='relu'))
+        m.add(Dense(125, activation='relu'))
+        m.add(Dense(l, activation='linear', name="bottleneck"))
+        m.add(Dense(125, activation='relu'))
+        m.add(Dense(250, activation='relu'))
+        m.add(Dense(500, activation='relu'))
+        m.add(Dense(2000, activation='relu'))
+        m.add(Dense((all_ft_1 * all_ft_2), activation='sigmoid'))
+        m.compile(loss='mean_squared_error', optimizer=Adam())
+        history = m.fit(x_train, x_train, batch_size=100, epochs=10, verbose=1,
+                        validation_data=(x_test, x_test))
 
-    encoder = Model(m.input, m.get_layer('bottleneck').output)
-    Zenc = encoder.predict(predict_data)  # bottleneck representation
-    np.savez_compressed(os.path.join(output_path, 'encoder_{}_features'.format(all_ft_1)), Zenc)
-    Renc = m.predict(predict_data)  # reconstruction
-    #np.savez_compressed(os.path.join(output_path, 'autoencoder_reconstruction'), Renc)
-    logging.info('MSE:{}, Val loss:{}'.format(history.history['loss'],
-                                              history.history['val_loss']))
-    plot_val_los_autoe(history.history['val_loss'], history.history['loss'],
-                       output_path)
-    encoder.save(os.path.join(output_path,'autoencoder_model.h5'))
-    # serialize model to JSON
-    model_json = encoder.to_json()
-    with open(os.path.join(output_path, 'autoencoder_architecture.json'), "w") as json_file:
-        json_file.write(model_json)
-    # serialize weights to HDF5
-    encoder.save_weights(os.path.join(output_path, 'autoencoder_weights.h5'))
+        encoder = Model(m.input, m.get_layer('bottleneck').output)
+        Zenc = encoder.predict(predict_data)  # bottleneck representation
+        np.savez_compressed(os.path.join(output_path, 'encoder_{}_features'.format(l)), Zenc)
+        Renc = m.predict(predict_data)  # reconstruction
+        np.savez_compressed(os.path.join(output_path, 'autoencoder_reconstruction'), Renc)
+        logging.info('MSE:{}, Val loss:{}'.format(history.history['loss'],
+                                                  history.history['val_loss']))
+        plot_val_los_autoe(history.history['val_loss'], history.history['loss'],
+                           output_path)
+        encoder.save(os.path.join(output_path,'autoencoder_model.h5'))
+        # serialize model to JSON
+        model_json = encoder.to_json()
+        with open(os.path.join(output_path, 'autoencoder_architecture.json'), "w") as json_file:
+            json_file.write(model_json)
+        # serialize weights to HDF5
+        encoder.save_weights(os.path.join(output_path, 'autoencoder_weights.h5'))
 
     return Zenc
 
@@ -121,10 +127,10 @@ def cluster_kmeans(X, output_path):
     :type output_path: str
     """
     # intialize the model
-    kmeans = SpectralClustering(n_clusters=2, affinity='nearest_neighbors',
-                                assign_labels='kmeans')
-    kmeans.fit(X)
-    y_kmeans = kmeans.predict(X)
+    #kmeans = SpectralClustering(n_clusters=2, affinity='nearest_neighbors',
+                                #assign_labels='kmeans')
+    kmeans = KMeans(n_clusters=2, random_state=0)
+    y_kmeans = kmeans.fit_predict(X)
     centers = kmeans.cluster_centers_
     # save the model
     pickle.dump(kmeans, open(os.path.join(output_path,"kmeans_model.pkl"), "wb"))
