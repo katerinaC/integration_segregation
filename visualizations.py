@@ -31,6 +31,27 @@ def plot_val_los_autoe(val, loss, output_path):
     plt.savefig(os.path.join(output_path, 'Val_loss_autoencoder.pdf'))
 
 
+def plot_acc_autoe(val_acc, tr_acc, output_path):
+    """
+    Plots the training and validation loss function of an autoencoder.
+
+    :param val_acc: validation loss values
+    :type val_acc: []
+    :param tr_acc: training loss values
+    :type tr_acc: []
+    :param output_path: path to output directory
+    :type output_path: str
+    """
+    sns.set(style="whitegrid")
+    dict = {'validation_acc': val_acc, 'training_acc': tr_acc}
+    data = pd.DataFrame(data=dict)
+    sns.lineplot(data=data, palette="tab10", linewidth=2.5)
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Training and validation accuracy')
+    plt.savefig(os.path.join(output_path, 'Valacc_tracc_autoencoder.pdf'))
+
+
 def plot_histogram_mod_ge(df, output_path):
     """
     Plots the modularity and global efficiency of dfcs histograms

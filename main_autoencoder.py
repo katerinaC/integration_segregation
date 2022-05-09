@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--ba', type=int, default=80,
                         help='Number of brain areas',
                         required=False)
-    parser.add_argument('--imb', action='store_true', default=True,
+    parser.add_argument('--imb', action='store_true', default=False,
                         help='Imbalanced dataset', required=False)
 
     return parser.parse_args()

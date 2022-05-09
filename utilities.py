@@ -164,13 +164,21 @@ def preprocess_autoencoder(input_paths, output_path, brain_areas):
     all_paths = []
     start = [0]
     y = []
+    y_tasks = []
+    subjects = []
     dict = {}
 
     for path in tqdm(input_paths):
         all_subjects_paths = return_paths_list(path, '.npz')
         n_subjects_times = len(all_subjects_paths)
         all_paths.extend(all_subjects_paths)
-        dict.update({path.split('/')[7]: (
+        for pa in all_subjects_paths:
+            task = pa.split('/')[7]
+            y_tasks.append(task)
+        for sub in all_subjects_paths:
+            subj = sub.split('/')[8].split('_')[1]
+            subjects.append(subj)
+        dict.update({all_subjects_paths[0].split('/')[6]: (
         start[input_paths.index(path)],
         start[input_paths.index(path)] + n_subjects_times)})
         start.append((n_subjects_times + start[input_paths.index(path)]))
@@ -178,17 +186,18 @@ def preprocess_autoencoder(input_paths, output_path, brain_areas):
     with open(os.path.join(output_path, 'arrays_starts.json'), 'w') as fp:
         json.dump(dict, fp)
     n_samples = len(all_paths)
-    #dfc_all = np.full((n_samples, brain_areas, brain_areas), fill_value=0).astype(np.float64)
-    dfc_all = np.memmap('merged.buffer', dtype=np.float64, mode='w+',
-                       shape=(n_samples, brain_areas, brain_areas))
+    dfc_all = np.full((n_samples, brain_areas, brain_areas), fill_value=0).astype(np.float64)
+    #dfc_all = np.memmap('merged.buffer', dtype=np.float64, mode='w+',
+                       #shape=(n_samples, brain_areas, brain_areas))
 
     for p in tqdm(all_paths):
         dfc = np.load(p)['arr_0']
         dfc_all[all_paths.index(p), :, :] = dfc
-
     np.save(os.path.join(output_path, 'y'), y)
-    #np.savez_compressed(os.path.join(output_path, 'dfc_all'), dfc_all)
-    return dfc_all, n_samples, y
+    np.save(os.path.join(output_path, 'y_tasks'), y_tasks)
+    np.savez_compressed(os.path.join(output_path, 'dfc_all'), dfc_all)
+    np.save(os.path.join(output_path, 'subjects'), subjects)
+    return dfc_all, n_samples, np.asarray(y)
 
 
 def find_delimeter(input_path):

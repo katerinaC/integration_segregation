@@ -6,8 +6,9 @@ Katerina Capouskova 2020, kcapouskova@hotmail.com
 import argparse
 import json
 import os
-import numpy as np
+
 import community
+import numpy as np
 import pandas as pd
 
 #from autoencoder import autoencoder
@@ -38,7 +39,7 @@ def parse_args():
     parser.add_argument('--ba', type=str,
                         help='Path to brain areas files (.csv)', required=False)
     parser.add_argument('--pattern', type=str,
-                        help='Pattern of the input file', required=True)
+                        help='Pattern of the input file', required=False)
     parser.add_argument('--areas', type=int,
                         help='Number of brain areas', required=False)
     parser.add_argument('--phases', type=int,

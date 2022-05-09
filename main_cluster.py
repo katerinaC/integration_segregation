@@ -55,13 +55,14 @@ def main():
     df['y_kmeans'] = y_kmeans.tolist()
 
     # sort dFCs according to clusters
+    # path version: /Users/user/Desktop/DATA/HCP_DATA/dFC_dbs80/Emotion/subject_0_time_0.npz
     for dfc in tqdm(dfc_paths):
         path, file = os.path.split(dfc)
         split_list = file.split('_')
         subject = split_list[1]
         time = split_list[3].split('.')[0]
         path_task = dfc.split('/')
-        task = path_task[7]
+        task = path_task[8]
         output_path_1 = os.path.join(output_path, 'cluster_1', task)
         create_dir(output_path_1)
         output_path_2 = os.path.join(output_path, 'cluster_2', task)
