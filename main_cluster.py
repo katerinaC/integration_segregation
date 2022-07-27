@@ -53,6 +53,7 @@ def main():
     X = df[["modularity", "global_efficiency"]].to_numpy()
     y_kmeans, centers = cluster_kmeans(X, output_path)
     df['y_kmeans'] = y_kmeans.tolist()
+    df.to_csv(os.path.join(output_path, 'merged_clusters.csv'))
 
     # sort dFCs according to clusters
     # path version: /Users/user/Desktop/DATA/HCP_DATA/dFC_dbs80/Emotion/subject_0_time_0.npz

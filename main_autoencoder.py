@@ -54,6 +54,5 @@ def main():
     encoded = autoencoder(dfc_all, output_path, y, latent, imbalanced=imbalanced)
 
 
-
 if __name__ == '__main__':
     main()
